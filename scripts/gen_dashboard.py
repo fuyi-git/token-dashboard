@@ -1,32 +1,12 @@
 # -*- coding: utf-8 -*-
-"""WorkBuddy Token 消耗看板构建脚本
-
+"""每日 Token 消耗看板构建脚本
 扫描 ~/.workbuddy/projects/<工作空间>/*.jsonl，抽取请求级 usage 数据，
 生成单文件自包含看板 token-dashboard.html（离线可看）。
-
-跨平台：Windows / macOS / Linux 通用，仅依赖 Python 标准库（3.8+）。
-
-用法：
-    python gen_dashboard.py                    # 输出到当前目录 token-dashboard.html
-    python gen_dashboard.py --out 看板.html     # 自定义输出路径
-    python gen_dashboard.py --projects <目录>   # 自定义会话日志目录
 """
-import argparse, json, glob, os, sys, datetime
+import json, glob, os, datetime
 
-# Windows 控制台 GBK 环境下防止中文 print 报错
-try:
-    sys.stdout.reconfigure(encoding="utf-8")
-except Exception:
-    pass
-
-_ap = argparse.ArgumentParser(description="WorkBuddy Token 消耗看板生成器")
-_ap.add_argument("--projects", default=os.path.join(os.path.expanduser("~"), ".workbuddy", "projects"),
-                 help="WorkBuddy 会话日志目录（默认 ~/.workbuddy/projects）")
-_ap.add_argument("--out", default="token-dashboard.html", help="输出 HTML 路径（默认当前目录 token-dashboard.html）")
-_args = _ap.parse_args()
-
-PROJECTS = _args.projects
-OUT = _args.out
+PROJECTS = r"C:\Users\Administrator\.workbuddy\projects"
+OUT = r"C:\Users\Administrator\WorkBuddy\2026-08-10-10-15-34\token-dashboard.html"
 
 def parse_ts(v):
     if isinstance(v, (int, float)):
@@ -52,9 +32,13 @@ def grab(o):
     tt = ru.get('total_tokens') or u.get('totalTokens')
     if not tt: return None
     model = pd.get('model') or pd.get('requestModelId') or pd.get('requestModelName') or 'unknown'
+    ptd = ru.get('prompt_tokens_details') or {}
+    ch = ru.get('prompt_cache_hit_tokens')
+    if ch is None: ch = ptd.get('cached_tokens') or 0  # 兜底：DeepSeek 风格顶层字段 → OpenAI 风格嵌套字段（claude/qwen/glm）
+    cw = ptd.get('cached_creation_tokens') or ptd.get('cache_write_tokens') or 0  # 缓存写入（Claude 按 1.25× 输入价计）
     return dict(tt=int(tt), it=int(ru.get('prompt_tokens') or u.get('inputTokens') or 0),
                 ot=int(ru.get('completion_tokens') or u.get('outputTokens') or 0),
-                ch=int(ru.get('prompt_cache_hit_tokens') or 0), model=model)
+                ch=int(ch or 0), cw=int(cw or 0), model=model)
 
 def session_title(o, fallback):
     """取首条非 system-reminder 的用户消息前 42 字作为任务标题；跳过 < 开头的内部标签消息"""
@@ -84,17 +68,11 @@ def session_title(o, fallback):
 MODEL_MERGE={'glm-5.2-x':'glm-5.2'}
 
 def short_ws(name):
-    """工作空间目录名是路径 slug（如 c-Users-foo-WorkBuddy-2026-08-01-10-00-00），
-    取 WorkBuddy 之后的部分作为短名；非 WorkBuddy 目录（如桌面工作区）原样返回"""
-    i = name.rfind('-WorkBuddy-')
-    if i >= 0 and name[i + 11:]:
-        return name[i + 11:]
+    for pre in ('c-Users-Administrator-WorkBuddy-', 'c-Users-Administrator-Desktop-',
+                'c-Users-Administrator-', 'E-workbuddy-', 'e-WorkBuddy-'):
+        if name.startswith(pre):
+            return name[len(pre):]
     return name
-
-if not os.path.isdir(PROJECTS):
-    print('未找到数据目录:', PROJECTS)
-    print('请确认本机已安装并使用过 WorkBuddy，或用 --projects 指定会话日志目录。')
-    sys.exit(1)
 
 now = datetime.datetime.now()
 gen_ms = int(now.timestamp() * 1000)
@@ -132,7 +110,7 @@ for fp in files:
             if not ts: continue
             if r['model'] not in model_idx:
                 model_idx[r['model']] = len(models); models.append(r['model'])
-            recs.append((int(ts // 60), model_idx[r['model']], r['tt'], r['it'], r['ot'], r['ch']))
+            recs.append((int(ts // 60), model_idx[r['model']], r['tt'], r['it'], r['ot'], r['ch'], r['cw']))
     if not recs: continue
     recs.sort(key=lambda x: x[0])
     d = sessions.setdefault(sid, {'w': ws_idx[folder], 'id': sid, 't': title, 'r': []})
@@ -302,7 +280,7 @@ const CJD={grid:'#323029',axis:'#6f6d66',axis2:'#6f6d66',blue:'#8fb8d9',dash:'#5
 let DARK=false,CJ=CJL,MC=MCL,RAMP=RMPL;
 try{if(localStorage.getItem('td-dark')==='1'){DARK=true;CJ=CJD;MC=MCD;RAMP=RMPD;}}catch(e){}
 const modelColor=i=>MC[i%MC.length];
-// 预估单价（元 / 百万 token）：[输入, 输出, 缓存命中]；成本按"缓存命中率统一 95%"计：95% 输入走缓存价、5% 走输入价。可按实际套餐修改。
+// 预估单价（元 / 百万 token）：[输入, 输出, 缓存命中]（官方价）；成本按每条请求的实际缓存计：读命中走缓存价、缓存写入（Claude）按 1.25× 输入价、其余输入走输入价
 const PRICE={'deepseek-v4-flash':[1,4,0.2],'deepseek-v4-pro':[2,8,0.5],'deepseek':[2,8,0.5],'glm-5.3':[2,8,0.4],'glm-5.2-x':[1.2,6,0.24],'glm-5.2':[0.8,3.2,0.16],'glm':[1,4,0.2],'kimi':[1.5,6,0.3],'claude-opus-5':[150,750,15],'claude-opus-4-8':[110,550,11],'claude':[110,550,11],'qwen':[2.4,9.6,0.48],'hy3':[4,16,0.8],'hy':[4,16,0.8],'minimax':[1,5,0.2],'m3':[1,5,0.2]};
 const priceOf=name=>{const n=(name||'').toLowerCase();for(const k in PRICE)if(n.startsWith(k))return PRICE[k];return [2,8,0.4];};
 const MP=D.models.map(m=>priceOf(m));
@@ -377,7 +355,7 @@ function aggregate(){
       const wn=s.w;ws[wn]=ws[wn]||{tt:0,n:0};ws[wn].tt+=r[2];
       const bi=Math.floor(h/6);band[bi]+=r[2];
       tot+=r[2];inp+=r[3];out+=r[4];ch+=r[5];turns++;tn++;tt+=r[2];
-      const pp=MP[r[1]];cost+=(r[3]*0.95*pp[2]+r[3]*0.05*pp[0]+r[4]*pp[1])/1e6;
+      const pp=MP[r[1]];const cht=Math.max(0,Math.min(r[5],r[3]));const cwt=Math.max(0,Math.min(r[6]||0,r[3]-cht));cost+=(cht*pp[2]+cwt*1.25*pp[0]+(r[3]-cht-cwt)*pp[0]+r[4]*pp[1])/1e6;
       if(!first)first=r[0];last=r[0];}
     if(tn){nsess++;(ws[s.w]=ws[s.w]||{tt:0,n:0}).n+=1;sessAgg.push({s,tt,tn,first,last});}
     else s._=0;
@@ -803,5 +781,5 @@ themeBtn.onclick=()=>{DARK=!DARK;CJ=DARK?CJD:CJL;MC=DARK?MCD:MCL;RAMP=DARK?RMPD:
 
 html = TEMPLATE.replace('__DATA__', js)
 open(OUT, 'w', encoding='utf-8').write(html)
-print('written:', os.path.abspath(OUT), f'({os.path.getsize(OUT)/1e6:.1f} MB)')
+print('written:', OUT, f'({os.path.getsize(OUT)/1e6:.1f} MB)')
 print('sessions:', len(sess_list), '| models:', len(models), '| workspaces:', len(ws_names))

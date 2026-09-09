@@ -48,7 +48,7 @@ python scripts/gen_dashboard.py --out 看板.html   # 自定义输出路径
 ## 数据说明
 
 - 数据源：`~/.workbuddy/projects/**/*.jsonl` 中每条记录的 `providerData.rawUsage / usage` 字段（请求级真实 usage）；子代理日志自动归属父会话。
-- 预估金额基于 `scripts/gen_dashboard.py` 头部的 `PRICE` 表（元/百万 token，[输入, 输出, 缓存命中]），缓存命中按统一 95% 命中率折算——不同用户套餐价格不同，可自行修改该表。
+- 预估金额基于 `scripts/gen_dashboard.py` 头部的 `PRICE` 表（元/百万 token，[输入, 输出, 缓存命中]），按每条请求的**实际缓存命中**计价：读命中走缓存价、缓存写入（Claude 系）按 1.25× 输入价、其余输入走输入价——不同用户套餐价格不同，可自行修改该表。
 - 所有数据均来自本机日志，不外发、不上传。
 
 ## 目录结构
