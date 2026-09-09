@@ -1,13 +1,32 @@
 # -*- coding: utf-8 -*-
-"""每日 Token 消耗看板构建脚本
+"""WorkBuddy Token 消耗看板构建脚本
+
 扫描 ~/.workbuddy/projects/<工作空间>/*.jsonl，抽取请求级 usage 数据，
 生成单文件自包含看板 token-dashboard.html（离线可看）。
+
+跨平台：Windows / macOS / Linux 通用，仅依赖 Python 标准库（3.8+）。
+
+用法：
+    python gen_dashboard.py                    # 输出到当前目录 token-dashboard.html
+    python gen_dashboard.py --out 看板.html     # 自定义输出路径
+    python gen_dashboard.py --projects <目录>   # 自定义会话日志目录
 """
-import json, glob, os, datetime
+import argparse, json, glob, os, sys, datetime
 
-PROJECTS = r"C:\Users\Administrator\.workbuddy\projects"
-OUT = r"C:\Users\Administrator\WorkBuddy\2026-08-10-10-15-34\token-dashboard.html"
+# Windows 控制台 GBK 环境下防止中文 print 报错
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except Exception:
+    pass
 
+_ap = argparse.ArgumentParser(description="WorkBuddy Token 消耗看板生成器")
+_ap.add_argument("--projects", default=os.path.join(os.path.expanduser("~"), ".workbuddy", "projects"),
+                 help="WorkBuddy 会话日志目录（默认 ~/.workbuddy/projects）")
+_ap.add_argument("--out", default="token-dashboard.html", help="输出 HTML 路径（默认当前目录 token-dashboard.html）")
+_args = _ap.parse_args()
+
+PROJECTS = _args.projects
+OUT = _args.out
 def parse_ts(v):
     if isinstance(v, (int, float)):
         if v > 1e12: return v / 1000.0
@@ -68,10 +87,11 @@ def session_title(o, fallback):
 MODEL_MERGE={'glm-5.2-x':'glm-5.2'}
 
 def short_ws(name):
-    for pre in ('c-Users-Administrator-WorkBuddy-', 'c-Users-Administrator-Desktop-',
-                'c-Users-Administrator-', 'E-workbuddy-', 'e-WorkBuddy-'):
-        if name.startswith(pre):
-            return name[len(pre):]
+    """工作空间目录名是路径 slug（如 c-Users-foo-WorkBuddy-2026-08-01-10-00-00），
+    取 WorkBuddy 之后的部分作为短名；非 WorkBuddy 目录（如桌面工作区）原样返回"""
+    i = name.rfind('-WorkBuddy-')
+    if i >= 0 and name[i + 11:]:
+        return name[i + 11:]
     return name
 
 now = datetime.datetime.now()
