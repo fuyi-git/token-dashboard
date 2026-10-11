@@ -86,6 +86,15 @@ def session_title(o, fallback):
 
 MODEL_MERGE={'glm-5.2-x':'glm-5.2'}
 
+def norm_model(name):
+    """模型名归一化：去除首尾空白并统一小写。
+
+    同一模型在不同 provider/日志里大小写不一致（如 Deepseek-v4-flash / deepseek-v4-flash），
+    不归一会被拆成多个模型卡片，导致统计重复计项、TOKEN 分项错乱。
+    """
+    n = (name or '').strip().lower()
+    return MODEL_MERGE.get(n, n)
+
 def short_ws(name):
     """工作空间目录名是路径 slug（如 c-Users-foo-WorkBuddy-2026-08-01-10-00-00），
     取 WorkBuddy 之后的部分作为短名；非 WorkBuddy 目录（如桌面工作区）原样返回"""
@@ -125,7 +134,7 @@ for fp in files:
                 if t: title = t
             r = grab(o)
             if not r: continue
-            r['model'] = MODEL_MERGE.get(r['model'], r['model'])
+            r['model'] = norm_model(r['model'])
             ts = parse_ts(o.get('timestamp'))
             if not ts: continue
             if r['model'] not in model_idx:
