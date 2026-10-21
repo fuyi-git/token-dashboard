@@ -343,7 +343,7 @@ function fmt(n){if(n>=1e8)return (n/1e8).toFixed(2)+' 亿';if(n>=1e4)return (n/1
 const nf=n=>n.toLocaleString('en-US');
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 function hm(n){return new Date(n*60000);}
-function fdate(d){const p=x=>String(x).padStart(2,'0');return (d.getMonth()+1)+'-'+p(d.getDate());}
+function fdate(d){const p=x=>String(x).padStart(2,'0');return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());}
 function ftime(d){const p=x=>String(x).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes());}
 
 function iterReq(cb){
@@ -407,7 +407,7 @@ function renderHeat(A){
   const avg=A.tot/(dates.length||1);
   const wrap=$('#heatWrap');let html='';
   for(const d of dates){
-    html+='<div class="hrow"><div class="hlab">'+d+'</div>';
+    html+='<div class="hrow"><div class="hlab">'+d.slice(5)+'</div>';
     for(let i=0;i<72;i++){
       const v=A.daily[d].hh?A.daily[d].hh[i]:0;
       const lv=v==0?0:Math.min(7,Math.max(1,1+Math.floor(Math.log(v/avg/0.001)/Math.log(350)*7)));
@@ -575,7 +575,7 @@ function renderDailyModel(A){
     const dayTip=d+' · 合计 '+nf(dtt)+'\n'+dayList.map(o=>'· '+(o.mi===-1?'其他':D.models[o.mi])+'  '+nf(o.v)+'（'+(dtt?(o.v/dtt*100).toFixed(1):0)+'%）').join('\n');
     bars+='<rect x="'+(pL+pitch*i).toFixed(1)+'" y="'+pT+'" width="'+pitch.toFixed(1)+'" height="'+(H-pT-pB)+'" fill="#fff" fill-opacity="0" pointer-events="all" data-tip="'+dayTip+'"/>';
     const step=Math.ceil(n/7);
-    if(i%step===0||i===n-1)xlabels+='<text x="'+(pL+pitch*i+pitch/2)+'" y="'+(H-4)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="middle">'+d+'</text>';
+    if(i%step===0||i===n-1)xlabels+='<text x="'+(pL+pitch*i+pitch/2)+'" y="'+(H-4)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="middle">'+d.slice(5)+'</text>';
   });
   svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('height',H);
   svg.innerHTML=g+bars+xlabels+
