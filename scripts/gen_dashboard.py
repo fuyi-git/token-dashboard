@@ -159,7 +159,11 @@ h1{font-size:20px;font-weight:700;letter-spacing:.3px}
 .sub{font-size:11px;color:var(--t3);margin-top:3px;display:flex;align-items:center;gap:8px}
 .tbtn{border:1px solid var(--border2);background:var(--card);color:var(--t2);font-size:11px;padding:1px 10px;border-radius:999px;cursor:pointer}
 .tbtn:hover{border-color:var(--focus);color:var(--t1)}
-header{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:16px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.hleft{min-width:0}
+.hright{flex:none;display:flex;flex-wrap:wrap;align-items:center}
+.drange{display:flex;align-items:center;gap:4px;min-width:0}
+.drange .to{color:var(--t4);font-size:11px;flex:none}
 .pill{border:1px solid var(--border2);background:var(--card);color:var(--t2);font-size:12px;padding:5px 14px;border-radius:6px;cursor:pointer;margin-left:6px}
 .pill.on{background:var(--selbg);color:var(--selfg);border-color:var(--selbd)}
 .datepick{border:1px solid var(--border2);background:var(--card);color:var(--t2);font-size:12px;padding:4px 8px;border-radius:6px;outline:none;vertical-align:middle}
@@ -235,14 +239,67 @@ table.rt th:first-child,table.rt td:first-child{text-align:left}
 table.rt td{text-align:right;padding:4px 6px;border-bottom:1px solid var(--row);color:var(--tdc);white-space:nowrap}
 .rt-wrap{max-height:320px;overflow:auto;border:1px solid var(--border3);border-radius:8px}
 #tip{position:fixed;background:var(--tipbg);color:var(--tiptc);padding:7px 10px;border-radius:7px;font-size:11px;pointer-events:none;opacity:0;transition:opacity .08s;white-space:pre;z-index:99;line-height:1.55}
+
+/* ── 响应式：1320 / 1080 / 720 / 420 四档 ── */
+@media (max-width:1320px){
+  .kpis{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:1080px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  .kpis{grid-template-columns:repeat(4,1fr)}
+}
+@media (max-width:720px){
+  body{padding:14px 11px 36px}
+  header{flex-direction:column;align-items:stretch;gap:10px}
+  header>div{min-width:0}
+  header>div:last-child{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+  .pill{margin-left:0}
+  .datepick{flex:1 1 0;min-width:0;padding:4px 5px}
+  .drange{flex:1 1 100%}
+  h1{font-size:17px}
+  .sub{font-size:10px;flex-wrap:wrap;gap:6px}
+  .kpis{grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:8px}
+  .kpi{padding:10px 11px}
+  .kpi .k{font-size:10px}
+  .kpi .v{font-size:17px;margin-top:4px}
+  .kpi .v small{font-size:10px}
+  #top5{grid-template-columns:repeat(auto-fit,minmax(126px,1fr))!important}
+  .card{padding:12px;border-radius:8px;margin-bottom:10px}
+  .sec-h{margin-bottom:9px;align-items:flex-start}
+  .sec-h h2{font-size:13px}
+  .band4{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .b4{padding:5px 8px}
+  .tools{flex-wrap:wrap;justify-content:flex-end}
+  .tools input{flex:1 1 100%;width:auto;order:9}
+  .panel-scroll{padding:2px 6px;max-height:340px}
+  .wc-nm{flex:1 1 auto;width:auto}
+  .wc-tt{width:58px;font-size:12px}
+  .wc-meta{width:62px;font-size:9px}
+  .wviz{display:none}
+  .heat-wrap{max-height:400px;padding:5px 4px}
+  .hlab{width:34px;font-size:9px}
+  .hhead{padding-left:4px;padding-right:4px;gap:1px}
+  .hrow{gap:1px}
+  .view-h{flex-direction:column;align-items:flex-start;gap:6px}
+  .rt-wrap{max-height:260px}
+  table.rt{font-size:10px}
+  table.rt th,table.rt td{padding:4px 3px}
+  .crumb{flex-wrap:wrap;gap:6px}
+}
+@media (max-width:420px){
+  .kpi .v{font-size:16px}
+  .wc-meta{width:56px}
+  .datepick{flex:1 1 100px}
+  .pill{padding:5px 10px;font-size:11px}
+}
 </style></head><body>
 
-<header style="align-items:flex-end">
-  <div>
+<header>
+  <div class="hleft">
     <h1>Token 消耗看板</h1><div class="sub"><span id="genAt"></span><button class="tbtn" id="themeBtn" type="button">深色</button></div>
   </div>
-  <div style="flex:none;white-space:nowrap">
-    <button class="pill" data-w="1">1 天</button><button class="pill" data-w="3">3 天</button><button class="pill" data-w="7">近 7 天</button><button class="pill on" data-w="30">近 30 天</button><input type="date" id="dStart" class="datepick" title="起始日期"><span style="color:var(--t4);font-size:11px;margin:0 2px">至</span><input type="date" id="dEnd" class="datepick" title="结束日期">
+  <div class="hright">
+    <button class="pill" data-w="1">1 天</button><button class="pill" data-w="3">3 天</button><button class="pill" data-w="7">近 7 天</button><button class="pill on" data-w="30">近 30 天</button><span class="drange"><input type="date" id="dStart" class="datepick" title="起始日期"><span class="to">至</span><input type="date" id="dEnd" class="datepick" title="结束日期"></span>
   </div>
 </header>
 
@@ -342,7 +399,18 @@ const cutHi=()=>(!win&&customEnd)?customEnd*60000:Infinity;
 function fmt(n){if(n>=1e8)return (n/1e8).toFixed(2)+' 亿';if(n>=1e4)return (n/1e4).toFixed(1)+' 万';return String(Math.round(n));}
 const nf=n=>n.toLocaleString('en-US');
 const esc=s=>String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-function hm(n){return new Date(n*60000);}
+
+// 按像素宽度粗估截断（CJK 记 1em，其余 0.56em），避免 SVG 文本压到相邻列
+function fitText(t,maxW,fs){
+  const cw=ch=>{const c=ch.codePointAt(0);return ((c>0x2e80&&c<0x9fff)||(c>=0xff00&&c<=0xffef))?fs:fs*0.56;};
+  let acc=0,out='';
+  const chars=Array.from(String(t));
+  for(const ch of chars){
+    if(acc+cw(ch)>maxW-4)return out+(out.length<chars.length?'…':'');
+    acc+=cw(ch);out+=ch;
+  }
+  return out;
+}function hm(n){return new Date(n*60000);}
 function fdate(d){const p=x=>String(x).padStart(2,'0');return (d.getMonth()+1)+'-'+p(d.getDate());}
 function ftime(d){const p=x=>String(x).padStart(2,'0');return p(d.getHours())+':'+p(d.getMinutes());}
 
@@ -402,7 +470,11 @@ function renderKpis(A){
 function renderHeat(A){
   const dates=Object.keys(A.daily).sort().reverse();
   const head=$('#hhead');
-  head.innerHTML='<span style="width:42px;flex:none"></span>'+Array.from({length:72},(_,i)=>'<span style="text-align:left">'+(i%3==0?(i/3):'')+'</span>').join('');
+  // 小时刻度密度随可用宽度自适应，窄屏每 4/6 小时标一次，避免 24 个标签挤成一团
+  const hw=$('#heatWrap').clientWidth||560;
+  const lstep=hw<330?6:(hw<520?4:2);
+  head.innerHTML='<span class="hlab" style="visibility:hidden"></span>'+Array.from({length:72},(_,i)=>
+    '<span style="text-align:left">'+(i%3===0&&(i/3)%lstep===0?(i/3):'')+'</span>').join('');
   // 每小时 3 格（20 分钟粒度）；色阶：最深 = 窗口日均×0.35，最浅 = 窗口日均×0.001（对数插值）
   const avg=A.tot/(dates.length||1);
   const wrap=$('#heatWrap');let html='';
@@ -487,7 +559,7 @@ function hourData(){
 function renderRidge(A){
   const svg=$('#rdSvg');
   const {mH}=hourData();
-  const W=svg.clientWidth||800,H=112,pL=44,pR=8,pT=8,pB=18,plotH=H-pT-pB,base=pT+plotH;
+  const W=svg.clientWidth||800,H=112,pL=W<440?38:44,pR=8,pT=8,pB=18,plotH=H-pT-pB,base=pT+plotH;
   svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('height',H);
   const pitch=(W-pL-pR)/24;
   const mh={};
@@ -498,7 +570,7 @@ function renderRidge(A){
   const lo=Math.log10(vmin),hi=Math.log10(vmax),span=Math.max(1e-9,hi-lo);
   const yv=v=>pT+plotH*(1-(Math.log10(v)-lo)/span);
   let yt='';
-  for(let k=Math.ceil(lo);k<=Math.floor(hi);k++){const y=yv(Math.pow(10,k)).toFixed(1);yt+='<line x1="'+pL+'" y1="'+y+'" x2="'+(W-pR)+'" y2="'+y+'" stroke="'+CJ.grid+'" stroke-width="0.5"/><text x="'+(pL-5)+'" y="'+(+y+3).toFixed(1)+'" font-size="8.5" fill="'+CJ.axis2+'" text-anchor="end">'+fmt(Math.pow(10,k))+'</text>';}
+  for(let k=Math.ceil(lo);k<=Math.floor(hi);k++){const y=yv(Math.pow(10,k)).toFixed(1);yt+='<line x1="'+pL+'" y1="'+y+'" x2="'+(W-pR)+'" y2="'+y+'" stroke="'+CJ.grid+'" stroke-width="0.5"/><text x="'+(pL-5)+'" y="'+(+y+3).toFixed(1)+'" font-size="8.5" fill="'+CJ.axis2+'" text-anchor="end">'+fmt(Math.pow(10,k)).replace('.0 ',' ')+'</text>';}
   const mis=Object.keys(mh).map(Number).sort((a,b)=>{const ta=mh[a].reduce((x,y)=>x+y,0),tb=mh[b].reduce((x,y)=>x+y,0);return ta-tb;});
   const RC=rankColor(A);
   let defs='',curves='';
@@ -532,7 +604,9 @@ function renderRidge(A){
     curves+='<g opacity="'+(dim?0.22:1)+'">'+body+hit+'</g>';
   }
   let xt='';
-  for(let h=0;h<24;h+=2)xt+='<text x="'+(pL+pitch*(h+0.5))+'" y="'+(H-6)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="middle">'+h+'时</text>';
+  // 每格宽度不足时降低刻度密度：宽屏 2 小时一标，窄屏 4/6 小时一标
+  const hstep=pitch<16?6:(pitch<24?4:2);
+  for(let h=0;h<24;h+=hstep)xt+='<text x="'+(pL+pitch*(h+0.5))+'" y="'+(H-6)+'" font-size="'+(pitch<20?8:9)+'" fill="'+CJ.axis+'" text-anchor="middle">'+h+'时</text>';
   const idx=D.models.map((m,i)=>i).filter(i=>A.mTot[i]>0).sort((a,b)=>A.mTot[b]-A.mTot[a]).slice(0,8);
   const RC2=rankColor(A);
   $('#rdLegend').innerHTML=idx.map(mi=>'<span data-hrm="'+mi+'" style="cursor:pointer;'+(hrSel!==null&&hrSel!==mi?'opacity:.4':'')+'"><i style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+RC2[mi]+';margin-right:4px"></i>'+D.models[mi]+'</span>').join('');
@@ -553,8 +627,13 @@ function renderDailyModel(A){
   const svg=$('#dmSvg');const {top}=topModels(A);
   const dates=Object.keys(A.dm).sort();
   const mx=Math.max(...dates.map(d=>Object.values(A.dm[d]).reduce((a,b)=>a+b,0)),1);
-  const W=svg.clientWidth||800,H=102,pL=44,pR=8,pT=8,pB=18;
+  const W=svg.clientWidth||800,H=102,pL=W<440?38:44,pR=8,pT=8,pB=18;
   const n=dates.length||1;const pitch=(W-pL-pR)/n;const bw=Math.max(2,pitch*0.62);
+  // 日期标签密度：按每格实际宽度反推最多能放几个
+  const maxLab=Math.max(2,Math.floor((W-pL-pR)/52));
+  const labStep=Math.max(1,Math.ceil(n/maxLab));
+  const labIdx=[];for(let i=0;i<n;i+=labStep)labIdx.push(i);
+  if(n-1-labIdx[labIdx.length-1]>=labStep*0.7)labIdx.push(n-1);
   const segs=top.concat(selModel!==null&&selModel!==-1&&!top.includes(selModel)?[selModel]:[]);
   const RC=rankColor(A);
   const colorOf=mi=>mi===-1?CJ.other:RC[mi];
@@ -574,12 +653,11 @@ function renderDailyModel(A){
     const dayList=segs.map(mi=>({mi:mi,v:(A.dm[d][mi]||0)})).filter(o=>o.v>0).sort((a,b)=>b.v-a.v);
     const dayTip=d+' · 合计 '+nf(dtt)+'\n'+dayList.map(o=>'· '+(o.mi===-1?'其他':D.models[o.mi])+'  '+nf(o.v)+'（'+(dtt?(o.v/dtt*100).toFixed(1):0)+'%）').join('\n');
     bars+='<rect x="'+(pL+pitch*i).toFixed(1)+'" y="'+pT+'" width="'+pitch.toFixed(1)+'" height="'+(H-pT-pB)+'" fill="#fff" fill-opacity="0" pointer-events="all" data-tip="'+dayTip+'"/>';
-    const step=Math.ceil(n/7);
-    if(i%step===0||i===n-1)xlabels+='<text x="'+(pL+pitch*i+pitch/2)+'" y="'+(H-4)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="middle">'+d+'</text>';
+    if(labIdx.includes(i))xlabels+='<text x="'+(pL+pitch*i+pitch/2)+'" y="'+(H-4)+'" font-size="'+(W<420?8:9)+'" fill="'+CJ.axis+'" text-anchor="middle">'+d+'</text>';
   });
   svg.setAttribute('viewBox','0 0 '+W+' '+H);svg.setAttribute('height',H);
   svg.innerHTML=g+bars+xlabels+
-    '<text x="'+(pL-5)+'" y="'+(pT+7)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="end">'+fmt(mx)+'</text>'+
+    '<text x="'+(pL-5)+'" y="'+(pT+7)+'" font-size="'+(W<440?8:9)+'" fill="'+CJ.axis+'" text-anchor="end">'+fmt(mx).replace('.0 ',' ')+'</text>'+
     '<text x="'+(pL-5)+'" y="'+(H-pB)+'" font-size="9" fill="'+CJ.axis+'" text-anchor="end">0</text>';
 }
 document.addEventListener('click',e=>{
@@ -593,7 +671,8 @@ function renderModelDist(){
   const bym={};
   for(const s of D.sess)for(const r of s.r){const ts=r[0]*60000;if(ts<c||ts>=hiC)continue;(bym[r[1]]=bym[r[1]]||[]).push(r[2]);}
   const rows=Object.keys(bym).map(Number).sort((a,b)=>bym[b].length-bym[a].length).slice(0,8);
-  if(!rows.length){svg.setAttribute('viewBox','0 0 '+W+' 60');svg.setAttribute('height',60);svg.innerHTML='<text x="16" y="30" font-size="11" fill="'+CJ.muted+'">该时间范围内无数据</text>';$('#mdCap').textContent='';return;}
+  const cpt=W<560,hfs=cpt?11:13,rfs=cpt?10:12;
+  if(!rows.length){svg.setAttribute('viewBox','0 0 '+W+' 60');svg.setAttribute('height',60);svg.innerHTML='<text x="16" y="30" font-size="'+rfs+'" fill="'+CJ.muted+'">该时间范围内无数据</text>';$('#mdCap').textContent='';return;}
   const st=rows.map(m=>{const a=bym[m].slice().sort((x,y)=>x-y);const n=a.length;
     const p=q=>a[Math.min(n-1,Math.ceil(q*n)-1)];return{m,n,p50:p(.5),p90:p(.9)};});
   const all=[];rows.forEach(m=>all.push(...bym[m]));
@@ -601,10 +680,11 @@ function renderModelDist(){
   const gpct=q=>sorted[Math.min(sorted.length-1,Math.ceil(q*sorted.length)-1)];
   const gp50=gpct(.5);
   const cap=Math.max(1e5,Math.ceil(gpct(.995)*1.06/5e4)*5e4);
-  const nameW=Math.min(118,Math.max(...rows.map(m=>D.models[m].length))*6.1+6);
-  const cntX=nameW+8;
-  const x50=cntX+48,x90=x50+56,lw=x90+76;
-  const barW=52;
+  // 窄屏压缩左侧文字列与条形宽度，避免右侧 50%/90% 溢出画布
+  const nameW=Math.min(cpt?88:118,Math.max(...rows.map(m=>D.models[m].length))*(cpt?5.4:6.1)+6);
+  const cntX=nameW+(cpt?6:8);
+  const x50=cntX+(cpt?36:48),x90=x50+(cpt?42:56),lw=x90+(cpt?48:76);
+  const barW=cpt?32:52;
   const X=v=>lw+(W-lw-6)*Math.min(1,v/cap);
   const pScale=Math.max(st.reduce((a,s)=>Math.max(a,s.p90),0),1);
   const rh=44,bh=24,pT=14;
@@ -613,11 +693,11 @@ function renderModelDist(){
   for(let ri=0;ri<st.length;ri++)for(const v of bym[st[ri].m]){const i=Math.min(K-1,Math.floor(v/cap*K));cntM[ri][i]++;}
   const RC=LASTA?rankColor(LASTA):null;
   let out='<line x1="'+X(gp50).toFixed(1)+'" y1="'+(pT-6)+'" x2="'+X(gp50).toFixed(1)+'" y2="'+axY+'" stroke="'+CJ.dash+'" stroke-width="0.8" stroke-dasharray="3 2"/>'+
-    '<text x="'+(X(gp50)+3).toFixed(1)+'" y="'+(pT-1)+'" font-size="9" fill="'+CJ.axis+'">全局 50% '+fmt(gp50)+'</text>'+
-    '<text x="0" y="'+(pT-1)+'" font-size="13" fill="'+CJ.axis+'">模型</text>'+
-    '<text x="'+cntX+'" y="'+(pT-1)+'" font-size="13" fill="'+CJ.axis+'">次数</text>'+
-    '<text x="'+x50+'" y="'+(pT-1)+'" font-size="13" fill="'+CJ.axis+'">50%</text>'+
-    '<text x="'+x90+'" y="'+(pT-1)+'" font-size="13" fill="'+CJ.axis+'">90%</text>';
+    '<text x="'+(X(gp50)+3).toFixed(1)+'" y="'+(pT-1)+'" font-size="'+(cpt?8:9)+'" fill="'+CJ.axis+'"'+(X(gp50)>W-80?' text-anchor="end" transform="translate(-4,0)"':'')+'>全局 50% '+fmt(gp50)+'</text>'+
+    '<text x="0" y="'+(pT-1)+'" font-size="'+hfs+'" fill="'+CJ.axis+'">模型</text>'+
+    '<text x="'+cntX+'" y="'+(pT-1)+'" font-size="'+hfs+'" fill="'+CJ.axis+'">次数</text>'+
+    '<text x="'+x50+'" y="'+(pT-1)+'" font-size="'+hfs+'" fill="'+CJ.axis+'">50%</text>'+
+    '<text x="'+x90+'" y="'+(pT-1)+'" font-size="'+hfs+'" fill="'+CJ.axis+'">90%</text>';
   st.forEach((s,ri)=>{
     const col=RC?RC[s.m]:modelColor(s.m);
     const baseY=pT+ri*rh+24;
@@ -626,22 +706,23 @@ function renderModelDist(){
     let d='M'+lw.toFixed(1)+' '+baseY;
     for(let i=0;i<K;i++){const x=lw+(W-lw-6)*(i+0.5)/K;d+=' L'+x.toFixed(1)+' '+(baseY-sm[i]/mx*bh).toFixed(1);}
     d+=' L'+(W-6).toFixed(1)+' '+baseY+' Z';
+    const nm=fitText(D.models[s.m],nameW-1,cpt?10:11);
     const tip=esc(D.models[s.m])+'&#10;'+nf(s.n)+' 次 · 50% '+fmt(s.p50)+' · 90% '+fmt(s.p90);
     out+='<path d="'+d+'" fill="'+col+'" fill-opacity="0.3" stroke="'+col+'" stroke-width="0.8" data-tip="'+tip+'"/>'+
       '<line x1="'+X(s.p50).toFixed(1)+'" y1="'+(baseY-bh-1)+'" x2="'+X(s.p50).toFixed(1)+'" y2="'+baseY+'" stroke="'+col+'" stroke-width="1.6" data-tip="'+tip+'"/>'+
       '<circle cx="'+X(s.p90).toFixed(1)+'" cy="'+(baseY-4)+'" r="2" fill="'+CJ.axis+'" data-tip="'+tip+'"/>'+
-      '<text x="0" y="'+(baseY-5.5)+'" font-size="11" fill="'+CJ.t1+'">'+esc(D.models[s.m])+'</text>'+
-      '<text x="'+cntX+'" y="'+(baseY-5.5)+'" font-size="11" fill="'+CJ.t1+'">'+nf(s.n)+'</text>'+
-      '<text x="'+x50+'" y="'+(baseY-9)+'" font-size="12" fill="'+CJ.t1+'">'+fmt(s.p50)+'</text>'+
+      '<text x="0" y="'+(baseY-5.5)+'" font-size="'+rfs+'" fill="'+CJ.t1+'">'+esc(nm)+'</text>'+
+      '<text x="'+cntX+'" y="'+(baseY-5.5)+'" font-size="'+rfs+'" fill="'+CJ.t1+'">'+nf(s.n)+'</text>'+
+      '<text x="'+x50+'" y="'+(baseY-9)+'" font-size="'+(rfs+1)+'" fill="'+CJ.t1+'">'+fmt(s.p50)+'</text>'+
       '<rect x="'+x50+'" y="'+(baseY-5)+'" width="'+barW+'" height="5" fill="'+CJ.dimBar+'" fill-opacity="0.7" data-tip="'+tip+'"/>'+
       '<rect x="'+x50+'" y="'+(baseY-5)+'" width="'+Math.max(1.2,s.p50/pScale*barW).toFixed(1)+'" height="5" fill="'+col+'" fill-opacity="0.9" data-tip="'+tip+'"/>'+
-      '<text x="'+x90+'" y="'+(baseY-9)+'" font-size="12" fill="'+CJ.t1+'">'+fmt(s.p90)+'</text>'+
+      '<text x="'+x90+'" y="'+(baseY-9)+'" font-size="'+(rfs+1)+'" fill="'+CJ.t1+'">'+fmt(s.p90)+'</text>'+
       '<rect x="'+x90+'" y="'+(baseY-5)+'" width="'+barW+'" height="5" fill="'+CJ.dimBar+'" fill-opacity="0.7" data-tip="'+tip+'"/>'+
       '<rect x="'+x90+'" y="'+(baseY-5)+'" width="'+Math.max(1.2,s.p90/pScale*barW).toFixed(1)+'" height="5" fill="'+col+'" fill-opacity="0.45" data-tip="'+tip+'"/>';
   });
   let tks='<line x1="'+lw+'" y1="'+axY+'" x2="'+(W-6)+'" y2="'+axY+'" stroke="'+CJ.base+'"/>';
-  const stepT=1e5;
-  for(let v=0;v<=cap;v+=stepT){const x=X(v);
+  const stepT=Math.max(1e5,Math.ceil(cap/Math.max(2,Math.floor((W-lw-6)/46))/1e5)*1e5);
+  for(let v=0;v<=cap+1;v+=stepT){const x=X(v);
     tks+='<line x1="'+x.toFixed(1)+'" y1="'+axY+'" x2="'+x.toFixed(1)+'" y2="'+(axY+2)+'" stroke="'+CJ.axis+'"/>'+
       '<text x="'+x.toFixed(1)+'" y="'+(axY+12)+'" font-size="8" fill="'+CJ.axis+'" text-anchor="middle">'+(v===0?'0':(v/1e4)+'万')+'</text>';}
   const H=axY+16;
