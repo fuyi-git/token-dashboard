@@ -32,7 +32,7 @@ description: 生成 WorkBuddy Token 消耗看板（单文件离线 HTML，含 KP
 ## 数据与口径说明
 
 - 数据源：`~/.workbuddy/projects/**/*.jsonl` 中每条记录的 `providerData.rawUsage / usage` 字段（请求级真实 usage，非估算）；深层子代理日志（subagents/agent-*.jsonl）自动归属父会话。
-- 会话标题取首条非内部标签的用户消息前 42 字。
+- 会话标题按优先级取：`type=ai-title` 记录的 `aiTitle`（与侧边栏一致，多次生成取最新）→ 用户消息末尾 `<user_query>` 内的提问（取最后一个开始标签，避开自动化 system-reminder 里的说明文字）→ 首条纯文本用户消息；标题在首个句末标点处收口，最长 42 字。列表里同名会话（如每日定时任务）靠卡片上的 `MM-DD HH:MM` 区分。
 - 预估金额基于脚本头部 `PRICE` 表（单位：元/百万 token，格式 [输入, 输出, 缓存命中]），按每条请求的**实际缓存命中**计价：读命中走缓存价、缓存写入（Claude 系）按 1.25× 输入价、其余输入走输入价。不同用户套餐价格不同，**汇报时应说明这是按牌价的粗略预估，用户可自行修改 PRICE 表**。
 
 ## 注意
