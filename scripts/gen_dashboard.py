@@ -59,30 +59,50 @@ def grab(o):
                 ot=int(ru.get('completion_tokens') or u.get('outputTokens') or 0),
                 ch=int(ch or 0), cw=int(cw or 0), model=model)
 
-def session_title(o, fallback):
-    """取首条非 system-reminder 的用户消息前 42 字作为任务标题；跳过 < 开头的内部标签消息"""
-    if o.get('role') != 'user': return None
+TITLE_MAX = 42
+
+def clean(s):
+    return ' '.join((s or '').split()).strip()
+
+def trim_title(s):
+    """标题截断：优先在第一个句末标点处收口，避免出现半句的机器感文本"""
+    s = clean(s)
+    if not s: return None
+    for ch in ('。', '！', '？'):
+        i = s.find(ch)
+        if 0 < i <= TITLE_MAX: return s[:i]
+    if len(s) <= TITLE_MAX: return s
+    return s[:TITLE_MAX] + '…'
+
+def from_user_query(t):
+    """从 <user_query> 标签中取真实提问。
+    注意：自动化任务的 system-reminder 里也会出现 <user_query> 字样（说明文字），
+    因此取最后一个开始标签，保证拿到的是本轮真实提问。"""
+    if not t: return None
+    i = t.rfind('<user_query>')
+    if i < 0: return None
+    s = i + len('<user_query>')
+    j = t.find('</user_query>', s)
+    return trim_title(t[s:j if j > 0 else len(t)])
+
+def session_title(o):
+    """从前 42 字提取任务标题，返回 (tag_title, plain_title)。
+    tag_title：<user_query> 内的真实提问；plain_title：首条非内部标签的纯文本用户消息"""
+    if o.get('role') != 'user': return None, None
     c = o.get('content')
     if isinstance(c, str):
-        t = ' '.join(c.split())
-        if t and not t.startswith('<'):
-            return t[:42]
-        return None
-    if not isinstance(c, list): return None
-    for seg in c:
-        if isinstance(seg, dict) and seg.get('type') == 'input_text':
-            t = (seg.get('text') or '').strip()
-            if not t: continue
-            if t.startswith('<'): return None
-            t = ' '.join(t.split())
-            return t[:42]
-        if isinstance(seg, dict) and seg.get('type') == 'text':
-            t = (seg.get('text') or '').strip()
-            if not t: continue
-            if t.startswith('<'): return None
-            t = ' '.join(t.split())
-            return t[:42]
-    return None
+        segs = [c]
+    elif isinstance(c, list):
+        segs = [s.get('text') or '' for s in c if isinstance(s, dict) and s.get('type') in ('input_text', 'text')]
+    else:
+        return None, None
+    uq = plain = None
+    for t in segs:
+        if not t: continue
+        if uq is None: uq = from_user_query(t)
+        if plain is None and t.lstrip()[:1] != '<':
+            plain = trim_title(t)
+    return uq, plain
 
 MODEL_MERGE={'glm-5.2-x':'glm-5.2'}
 
@@ -112,7 +132,7 @@ for fp in files:
         ws_names[folder] = short_ws(folder)
         ws_idx[folder] = len(ws_idx)
     recs = []
-    title = None
+    ai_title = uq_title = plain_title = None
     with open(fp, encoding='utf-8', errors='ignore') as fh:
         for line in fh:
             try: o = json.loads(line)
@@ -120,9 +140,14 @@ for fp in files:
             if not isinstance(o, dict): continue
             sid_r = o.get('sessionId')
             if sid_r and len(parts) == 2: sid = sid_r  # 子代理文件保持归属父会话
-            if title is None:
-                t = session_title(o, sid)
-                if t: title = t
+            # 标题优先取自 ai-title 记录（与侧边栏显示一致，后生成的覆盖先生成的）
+            if o.get('type') == 'ai-title':
+                at = clean(o.get('aiTitle'))
+                if at: ai_title = trim_title(at)
+            elif uq_title is None or plain_title is None:
+                u, p = session_title(o)
+                if u and uq_title is None: uq_title = u
+                if p and plain_title is None: plain_title = p
             r = grab(o)
             if not r: continue
             r['model'] = MODEL_MERGE.get(r['model'], r['model'])
@@ -133,13 +158,20 @@ for fp in files:
             recs.append((int(ts // 60), model_idx[r['model']], r['tt'], r['it'], r['ot'], r['ch'], r['cw']))
     if not recs: continue
     recs.sort(key=lambda x: x[0])
+    title = ai_title or uq_title or plain_title
     d = sessions.setdefault(sid, {'w': ws_idx[folder], 'id': sid, 't': title, 'r': []})
+    if title and not d.get('t'): d['t'] = title
     d['r'].extend(recs)
+
+def fb_title(st_min, sid):
+    """兜底标题：用起始时间代替『无标题会话』，保证每条都能被识别定位"""
+    return '未命名 · ' + datetime.datetime.fromtimestamp(st_min * 60).strftime('%m-%d %H:%M') + ' · ' + sid[:8]
 
 sess_list = []
 for sid, d in sessions.items():
     if not d['r']: continue
-    sess_list.append({'w': d['w'], 'id': sid[:8], 't': d['t'] or '(无标题会话)', 'st': d['r'][0][0], 'r': d['r']})
+    st = d['r'][0][0]
+    sess_list.append({'w': d['w'], 'id': sid[:8], 't': d['t'] or fb_title(st, sid), 'st': st, 'r': d['r']})
 sess_list.sort(key=lambda s: s['st'])
 
 DATA = {'genMs': gen_ms, 'gen': now.strftime('%Y-%m-%d %H:%M'), 'ws': list(ws_names.values()), 'models': models, 'sess': sess_list}
@@ -693,15 +725,15 @@ function renderPanel(A){
     $('#wsSorts').style.display='none';
     let arr=A.sessAgg.filter(x=>!q||(x.s.t||'').toLowerCase().includes(q)).sort((a,b)=>b.tt-a.tt);
     if(!arr.length){p.innerHTML='<div class="empty">无匹配的会话</div>';return;}
-    p.innerHTML='<div class="subgrid">'+arr.map(x=>{const i=D.sess.indexOf(x.s);const t=esc(x.s.t||'');
-      return '<div class="wcard" data-si="'+i+'"><div class="wc-nm" title="'+t+'">'+t+'</div><div class="wc-tt">'+fmt(x.tt)+'</div><div class="wc-meta">'+(x.tt/A.tot*100).toFixed(1)+'% · '+x.tn+' 轮</div><div class="wviz">'+vizCells(SHD.get(x.s))+'</div></div>';}).join('');
+    p.innerHTML='<div class="subgrid">'+arr.map(x=>{const i=D.sess.indexOf(x.s);const t=esc(x.s.t||'');const sd=hm(x.s.st);
+      return '<div class="wcard" data-si="'+i+'"><div class="wc-nm" title="'+t+'">'+t+'</div><div class="wc-tt">'+fmt(x.tt)+'</div><div class="wc-meta">'+fdate(sd)+' '+ftime(sd)+' · '+(x.tt/A.tot*100).toFixed(1)+'% · '+x.tn+' 轮</div><div class="wviz">'+vizCells(SHD.get(x.s))+'</div></div>';}).join('');
   }else if(state.ses===null){
     tools.style.display='none';
     const arr=A.sessAgg.filter(x=>x.s.w===state.ws).sort((a,b)=>b.tt-a.tt);
     const wsTot=arr.reduce((a,x)=>a+x.tt,0);
     if(!arr.length){p.innerHTML='<div class="empty">该窗口内此工作空间无数据</div>';return;}
-    p.innerHTML=arr.map(x=>{const i=D.sess.indexOf(x.s);const t=esc(x.s.t||'');
-      return '<div class="wcard" data-ses="'+i+'"><div class="wc-nm" title="'+t+'">'+t+'</div><div class="wc-tt">'+fmt(x.tt)+'</div><div class="wc-meta">'+(wsTot?(x.tt/wsTot*100).toFixed(1):0)+'% · '+x.tn+' 轮</div><div class="wviz">'+vizCells(SHD.get(x.s))+'</div></div>';}).join('');
+    p.innerHTML=arr.map(x=>{const i=D.sess.indexOf(x.s);const t=esc(x.s.t||'');const sd=hm(x.s.st);
+      return '<div class="wcard" data-ses="'+i+'"><div class="wc-nm" title="'+t+'">'+t+'</div><div class="wc-tt">'+fmt(x.tt)+'</div><div class="wc-meta">'+fdate(sd)+' '+ftime(sd)+' · '+(wsTot?(x.tt/wsTot*100).toFixed(1):0)+'% · '+x.tn+' 轮</div><div class="wviz">'+vizCells(SHD.get(x.s))+'</div></div>';}).join('');
   }else{
     tools.style.display='none';
     const s=state.ses;const c=cut(),hiC=cutHi();
